@@ -26,7 +26,7 @@ import matplotlib.pyplot as plt  # plotting library
 n_real = 100  # number of realizations
 n_boot = 100  # number of bootstrap samples to calculate error
 # physical parameters
-L = 12  # system size
+L = 8  # system size
 N = L // 2  # number of particles
 N_up = N // 2 + N % 2  # number of fermions with spin up
 N_down = N // 2  # number of fermions with spin down
