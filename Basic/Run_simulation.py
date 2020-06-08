@@ -1,8 +1,9 @@
 from __future__ import print_function, division
 import os
-
+import sys
 """Open MP and MKL should speed up the time required to run these simulations!"""
-threads = 5
+# threads = sys.argv[1]
+threads = 6
 os.environ['OMP_NUM_THREADS'] = '{}'.format(threads)
 os.environ['MKL_NUM_THREADS'] = '{}'.format(threads)
 # line 4 and line 5 below are for development purposes and can be removed
@@ -14,7 +15,7 @@ import numpy as np  # general math functions
 from time import time  # tool for calculating computation time
 import matplotlib.pyplot as plt  # plotting library
 
-
+t_init=time()
 class hhg:
     def __init__(self, field, nup, ndown, nx, ny, U, t=0.52, F0=10., a=4., lat_type='square', pbc=True):
         self.nx = nx
@@ -97,7 +98,7 @@ dynamic_args = []
 
 """System Evolution Time"""
 cycles = 10  # time in cycles of field frequency
-n_steps = 1000
+n_steps = 4803
 start = 0
 stop = cycles / lat.freq
 times, delta = np.linspace(start, stop, num=n_steps, endpoint=True, retstep=True)
@@ -118,7 +119,7 @@ int_list = [[lat.U, i, i] for i in range(L)]  # onsite interaction
 
 # create static lists
 # Note that the pipe determines the spinfulness of the operator. | on the left corresponds to down spin, | on the right
-# is for up spin. For the onsite interaction here
+# is for up spin. For the onsite interaction here, we have:
 static_Hamiltonian_list = [
     ["n|n", int_list],  # onsite interaction
 ]
@@ -132,7 +133,7 @@ if lat.pbc:
     hop_right.append([lat.t, L - 1, 0])
     hop_left.append([-lat.t, L - 1, 0])
 
-# After creating the site lists, we attach an operator and a time-dependent function to them!
+# After creating the site lists, we attach an operator and a time-dependent function to them
 dynamic_Hamiltonian_list = [
     ["+-|", hop_left, expiphiconj, dynamic_args],  # up hop left
     ["-+|", hop_right, expiphi, dynamic_args],  # up hop right
@@ -153,8 +154,11 @@ operator_dict["lhopup"] = hamiltonian([], [["+-|", hop_left, expiphiconj, dynami
 operator_dict["lhopdown"] = hamiltonian([], [["|+-", hop_left, expiphiconj, dynamic_args]], basis=basis, **no_checks)
 # Add individual spin expectations
 for j in range(L):
+    # spin up densities for each site
     operator_dict["nup" + str(j)] = hamiltonian([["n|", [[1.0, j]]]], [], basis=basis, **no_checks)
+    # spin down
     operator_dict["ndown" + str(j)] = hamiltonian([["|n", [[1.0, j]]]], [], basis=basis, **no_checks)
+    # doublon densities
     operator_dict["D" + str(j)] = hamiltonian([["n|n", [[1.0, j, j]]]], [], basis=basis, **no_checks)
 
 """build ground state"""
@@ -187,7 +191,7 @@ print("Expectations calculated! This took {:.2f} seconds".format(time() - ti))
 
 print("saving expectations")
 np.savez(outfile, **expectations)
-
+print('All finished. Total time was {:.2f} seconds using {:d} threads'.format((time()-t_init)),threads)
 # npzfile = np.load(outfile)
 # print('npzfile.files: {}'.format(npzfile.files))
 # print('npzfile["1"]: {}'.format(npzfile["current"]))
