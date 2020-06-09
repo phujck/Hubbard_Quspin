@@ -1,3 +1,7 @@
+##########################################################
+# Basic Analysis code for the simple Hubbard model       #
+##########################################################
+
 import numpy as np
 import matplotlib.pyplot as plt
 import numpy.ma as ma
@@ -78,7 +82,7 @@ plt.rcParams.update(params)
 
 
 """Hubbard model Parameters"""
-L = 10 # system size
+L = 6  # system size
 N_up = L // 2 + L % 2  # number of fermions with spin up
 N_down = L // 2  # number of fermions with spin down
 N = N_up + N_down  # number of particles
@@ -100,28 +104,28 @@ start = 0
 # real time
 # stop = cycles / lat.freq
 # scaling time to frequency
-stop=cycles
+stop = cycles
 times, delta = np.linspace(start, stop, num=n_steps, endpoint=True, retstep=True)
 
 """loading expectations"""
-outfile = 'expectations:{}sites-{}up-{}down-{}t0-{}U-{}cycles-{}steps.npz'.format(L, N_up, N_down, t0, U, cycles,
-                                                                                  n_steps)
-figparams='{}sites-{}up-{}down-{}t0-{}U-{}cycles-{}steps.pdf'.format(L, N_up, N_down, t0, U, cycles,
-                                                                                  n_steps)
+outfile = './Data/expectations:{}sites-{}up-{}down-{}t0-{}U-{}cycles-{}steps-{}pbc.npz'.format(L, N_up, N_down, t0, U,
+                                                                                               cycles,
+                                                                                               n_steps, pbc)
+figparams = '{}sites-{}up-{}down-{}t0-{}U-{}cycles-{}steps-{}pbc.pdf'.format(L, N_up, N_down, t0, U, cycles,
+                                                                             n_steps, pbc)
 npzfile = np.load(outfile)
 expectations = np.load(outfile)
 """show the expectations available here"""
 print('expectations available: {}'.format(expectations.files))
 
-
 """example for using the analysis code"""
-J_field=expectations['current']
+J_field = expectations['current']
 plt.xlabel("Time (cycles)")
 plt.ylabel("$J(t)$")
 plt.grid(True)
 plt.tight_layout()
-plt.plot(times,J_field)
-plt.savefig('current-'+figparams, bbox_inches='tight')
+plt.plot(times, J_field)
+plt.savefig('./Plots/current-' + figparams, bbox_inches='tight')
 plt.show()
 plt.close()
 
