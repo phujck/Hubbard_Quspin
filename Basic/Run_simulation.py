@@ -37,7 +37,7 @@ N_down = L // 2  # number of fermions with spin down
 N = N_up + N_down  # number of particles
 t0 = 0.52  # hopping strength
 # U = 0*t0  # interaction strength
-U = 2 * t0  # interaction strength
+U = 0 * t0  # interaction strength
 pbc = True
 
 """Laser pulse parameters"""
@@ -50,17 +50,18 @@ lat = hhg(field=field, nup=N_up, ndown=N_down, nx=L, ny=0, U=U, t=t0, F0=F0, a=a
 """Define e^i*phi for later dynamics. Important point here is that for later implementations of tracking, we
 will pass phi as a global variable that will be modified as appropriate during evolution"""
 
-
-def expiphi(current_time):
+def phi(current_time):
     phi = (lat.a * lat.F0 / lat.field) * (np.sin(lat.field * current_time / (2. * cycles)) ** 2.) * np.sin(
         lat.field * current_time)
-    return np.exp(1j * phi)
+    return phi
+def expiphi(current_time):
+
+    return np.exp(1j * phi(current_time))
 
 
 def expiphiconj(current_time):
-    phi = (lat.a * lat.F0 / lat.field) * (np.sin(lat.field * current_time / (2. * cycles)) ** 2.) * np.sin(
-        lat.field * current_time)
-    return np.exp(-1j * phi)
+
+    return np.exp(-1j * phi(current_time))
 
 
 """This is used for setting up Hamiltonian in Quspin."""
@@ -162,6 +163,7 @@ print(type(expectations))
 current_partial = (expectations['lhopup'] + expectations['lhopdown'])
 current = -1j * lat.a * (current_partial - current_partial.conjugate())
 expectations['current'] = current
+expectations['phi']=phi(times)
 print("Expectations calculated! This took {:.2f} seconds".format(time() - ti))
 
 print("Saving Expectations. We have {} of them".format(len(expectations)))
