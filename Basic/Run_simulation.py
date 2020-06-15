@@ -14,8 +14,7 @@ import sys
 threads = 6
 os.environ['OMP_NUM_THREADS'] = '{}'.format(threads)
 os.environ['MKL_NUM_THREADS'] = '{}'.format(threads)
-# line 4 and line 5 below are for development purposes and can be removed
-
+# line 4 and line 5 below are for development purposes and can be remove
 from quspin.operators import hamiltonian, exp_op, quantum_operator  # operators
 from quspin.basis import spinful_fermion_basis_1d  # Hilbert space basis
 from quspin.tools.measurements import obs_vs_time  # calculating dynamics
@@ -26,17 +25,19 @@ import matplotlib.pyplot as plt  # plotting library
 
 sys.path.append('../')
 from tools import parameter_instantiate as hhg  # Used for scaling units.
-
+import psutil
+# note cpu_count for logical=False returns the wrong number for multi-socket CPUs.
+print("logical cores available {}".format(psutil.cpu_count(logical=True)))
 t_init = time()
-
+np.__config__.show()
 """Hubbard model Parameters"""
-L = 6  # system size
+L = 6# system size
 N_up = L // 2 + L % 2  # number of fermions with spin up
 N_down = L // 2  # number of fermions with spin down
 N = N_up + N_down  # number of particles
 t0 = 0.52  # hopping strength
 # U = 0*t0  # interaction strength
-U = 1 * t0  # interaction strength
+U = 2 * t0  # interaction strength
 pbc = True
 
 """Laser pulse parameters"""
@@ -66,14 +67,14 @@ def expiphiconj(current_time):
 dynamic_args = []
 
 """System Evolution Time"""
-cycles = 5  # time in cycles of field frequency
-n_steps = 1000
+cycles = 10  # time in cycles of field frequency
+n_steps = 2000
 start = 0
 stop = cycles / lat.freq
 times, delta = np.linspace(start, stop, num=n_steps, endpoint=True, retstep=True)
 
 """set up parameters for saving expectations later"""
-outfile = './Basic/Data/expectations:{}sites-{}up-{}down-{}t0-{}U-{}cycles-{}steps-{}pbc.npz'.format(L, N_up, N_down,
+outfile = './Data/expectations:{}sites-{}up-{}down-{}t0-{}U-{}cycles-{}steps-{}pbc.npz'.format(L, N_up, N_down,
                                                                                                      t0, U, cycles,
                                                                                                      n_steps, pbc)
 
@@ -122,13 +123,13 @@ no_checks = dict(check_pcon=False, check_symm=False, check_herm=False)
 operator_dict["lhopup"] = hamiltonian([], [["+-|", hop_left, expiphiconj, dynamic_args]], basis=basis, **no_checks)
 operator_dict["lhopdown"] = hamiltonian([], [["|+-", hop_left, expiphiconj, dynamic_args]], basis=basis, **no_checks)
 # Add individual spin expectations
-for j in range(L):
-    # spin up densities for each site
-    operator_dict["nup" + str(j)] = hamiltonian([["n|", [[1.0, j]]]], [], basis=basis, **no_checks)
-    # spin down
-    operator_dict["ndown" + str(j)] = hamiltonian([["|n", [[1.0, j]]]], [], basis=basis, **no_checks)
-    # doublon densities
-    operator_dict["D" + str(j)] = hamiltonian([["n|n", [[1.0, j, j]]]], [], basis=basis, **no_checks)
+# for j in range(L):
+#     # spin up densities for each site
+#     operator_dict["nup" + str(j)] = hamiltonian([["n|", [[1.0, j]]]], [], basis=basis, **no_checks)
+#     # spin down
+#     operator_dict["ndown" + str(j)] = hamiltonian([["|n", [[1.0, j]]]], [], basis=basis, **no_checks)
+#     # doublon densities
+#     operator_dict["D" + str(j)] = hamiltonian([["n|n", [[1.0, j, j]]]], [], basis=basis, **no_checks)
 
 """build ground state"""
 print("calculating ground state")
