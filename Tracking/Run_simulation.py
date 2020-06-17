@@ -113,7 +113,7 @@ no_checks = dict(check_pcon=False, check_symm=False, check_herm=False)
 
 hop_left_op= hamiltonian([["+-|", hop_left],["|+-", hop_left]],[], basis=basis, **no_checks)  # left hoperators
 hop_right_op=hop_left_op.getH() #right hoperators
-# hop_right_op= hamiltonian([["+-|", hop_right],["|+-", hop_right]],[], basis=basis, **no_checks)  # alternate r hoperator
+# hop_right_op= hamiltonian([["-+|", hop_right],["|-+", hop_right]],[], basis=basis, **no_checks)  # alternate r hoperator
 
 
 """build the Hamiltonian for actually evolving this bastard."""
@@ -183,10 +183,10 @@ neighbour_track=[]
 J_track=[]
 psi_t=psi_0
 neighbour_track.append(hop_left_op.expt_value(psi_t))
-phi_track.append(0)
+phi_track.append(phi_J_track(lat_track,0,J_target,neighbour_track[-1]))
 # current_partial=np.exp(-1j * phi_track[-1])*neighbour_track[-1]
 # current = -1j * lat_track.a * lat_track.t* (current_partial - current_partial.conjugate())
-J_track.append(0)
+J_track.append(J_target(0))
 """evolving system. For tracking things get a little sticky, since we want to read out expectations after each step"""
 
 for newtime in tqdm(times[:-1]):
@@ -210,25 +210,25 @@ plt.plot(times,phi_track)
 plt.plot(times,phi_original)
 plt.show()
 J_track=np.array(J_track)
-plt.plot(times,J_track.real)
+plt.plot(times,J_track.real/J_scale)
 plt.plot(times,J_field,linestyle='--')
 plt.show()
-# neighbour_track=np.array(neighbour_track)
-# plt.plot(times,neighbour_track.imag)
-# plt.show()
-# plt.plot(times,neighbour_track.real)
-# plt.show()
+neighbour_track=np.array(neighbour_track)
+plt.plot(times,neighbour_track.imag)
+plt.show()
+plt.plot(times,neighbour_track.real)
+plt.show()
 # psi_t = evolve(psi_0, 0, times, tracking_evolution)
 
-outfile='./Data/expectations:{}sites-{}up-{}down-{}t0-{}U-{}cycles-{}steps-{}pbc.npz'.format(L, N_up, N_down,
+outfile='./Data/expectations:{}sites-{}up-{}down-{}t0-{}U-{}cycles-{}steps-{}pbc'.format(L, N_up, N_down,
                                                                                                      t0, U, cycles,
                                                                                                      n_steps, pbc)
 str=':U_t={:.2f}-a_scale={:.2f}-J_scale={:.2f}'.format(U_track,a_scale,J_scale)
-expectations["tracking_current"+str]=J_track
-expectations["tracking_phi"+str]=phi_track
-expectations["tracking_neighbour"+str]=neighbour_track
+expectations["tracking_current"]=J_track
+expectations["tracking_phi"]=phi_track
+expectations["tracking_neighbour"]=neighbour_track
 print("Saving Expectations. We have {} of them".format(len(expectations)))
-np.savez(outfile, **expectations)
+np.savez(outfile+str, **expectations)
 
 print('All finished. Total time was {:.2f} seconds using {:d} threads'.format((time() - t_init), threads))
 
