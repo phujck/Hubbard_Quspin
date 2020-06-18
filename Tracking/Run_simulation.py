@@ -8,7 +8,7 @@ import sys
 
 """Open MP and MKL should speed up the time required to run these simulations!"""
 # threads = sys.argv[1]
-threads = 6
+threads = 10
 os.environ['OMP_NUM_THREADS'] = '{}'.format(threads)
 os.environ['MKL_NUM_THREADS'] = '{}'.format(threads)
 # line 4 and line 5 below are for development purposes and can be remove
@@ -30,13 +30,13 @@ print("logical cores available {}".format(psutil.cpu_count(logical=True)))
 t_init = time()
 np.__config__.show()
 """ Original Hubbard model Parameters"""
-L = 6# system size
+L = 10# system size
 N_up = L // 2 + L % 2  # number of fermions with spin up
 N_down = L // 2  # number of fermions with spin down
 N = N_up + N_down  # number of particles
 t0 = 0.52  # hopping strength
 # U = 0*t0  # interaction strength
-U = 0 * t0  # interaction strength
+U = 0.5 * t0  # interaction strength
 pbc = True
 
 """Laser pulse parameters"""
@@ -47,13 +47,13 @@ a = 4  # Lattice constant Angstrom
 """ Tracking Hubbard model Parameters"""
 a_scale=1 #scaling lattic parameter for tracking
 J_scale=1  #scaling J for tracking.
-L_track = 6# system size
+L_track = L# system size
 N_up_track = L_track // 2 + L % 2  # number of fermions with spin up
 N_down_track = L_track // 2  # number of fermions with spin down
 N = N_up_track + N_down_track  # number of particles
 t0_track = 0.52  # hopping strength
 # U = 0*t0  # interaction strength
-U_track = 0 * t0  # interaction strength
+U_track = U  # interaction strength
 pbc_track = True
 a_track=a*a_scale
 
@@ -77,8 +77,10 @@ loadfile = '../Basic/Data/expectations:{}sites-{}up-{}down-{}t0-{}U-{}cycles-{}s
                                                                                                      t0, U, cycles,
                                                                                                      n_steps, pbc)
 expectations = dict(np.load(loadfile))
+print(expectations.keys())
 J_field=expectations["current"]
 phi_original=expectations["phi"]
+neighbour=-expectations["neighbour"]/lat.t
 """Interpolates the current to be tracked."""
 J_target = interp1d(times, J_scale*J_field, fill_value=0, bounds_error=False, kind='cubic')
 
@@ -167,15 +169,21 @@ def phi_J_track(lat, current_time, J_target, nn_expec):
     phi=phi.real
     return phi
 
+glob_times=[]
 def tracking_evolution(current_time,psi):
     # print(neighbour_track[-1])
-    phi=phi_J_track(lat_track,current_time,J_target,neighbour_track[-1])
+    D = hop_left_op.expt_value(psi)
+    # D=neighbour_track[-1]
+    phi=phi_J_track(lat_track,current_time,J_target,D)
+    # phi = (lat.a * lat.F0 / lat.field) * (np.sin(lat.field * current_time / (2. * cycles)) ** 2.) * np.sin(
+    #     lat.field * current_time)
+    glob_times.append(current_time)
     # print(phi)
     # print(phi)
     # integrate static part of GPE
     psi_dot = -1j * (ham_onsite.dot(psi))
-    psi_dot += -1j*np.exp(-1j*phi)*hop_left_op.dot(psi)
-    psi_dot += -1j*np.exp(1j*phi)*hop_right_op.dot(psi)
+    psi_dot += 1j*lat_track.t*np.exp(-1j*phi)*hop_left_op.dot(psi)
+    psi_dot += 1j*lat_track.t*np.exp(1j*phi)*hop_right_op.dot(psi)
     return psi_dot
 
 phi_track=[]
@@ -192,11 +200,15 @@ J_track.append(J_target(0))
 for newtime in tqdm(times[:-1]):
     # evolve forward by a single step. This is almost certainly not efficient, but is a first pass.
     """this version uses Quspin default, dop853"""
+    # print(psi_t.shape)
     psi_t = evolve(psi_t, newtime, np.array([newtime + delta]), tracking_evolution)
+    # print(psi_t.shape)
+
     """this version uses lsoda. It is unforgivably slow"""
     # solver_args=dict(method='bdf')
-    # psi_t = evolve(psi_t, newtime, np.array([newtime + delta]), tracking_evolution,solver_name='lsoda')
-    psi_t = np.squeeze(psi_t)
+    # psi_t = evolve(psi_t, newtime, np.array([newtime + delta]), tracking_evolution,solver_name='dopri5')
+    # psi_t = np.squeeze(psi_t)
+    psi_t = psi_t.reshape(-1)
     """append expectations at each step"""
     neighbour_track.append(hop_left_op.expt_value(psi_t))
     phi_track.append(phi_J_track(lat_track,newtime+delta,J_target,neighbour_track[-1]))
@@ -206,8 +218,13 @@ for newtime in tqdm(times[:-1]):
 
 print("Evolution and expectation calculated! This one took {:.2f} seconds".format(time() - ti))
 # Simple plot to check things are behaving.
+
+plt.plot(glob_times,'-*')
+plt.show()
 plt.plot(times,phi_track)
 plt.plot(times,phi_original)
+plt.plot(times,np.pi/2*np.ones(len(times)),linestyle='dashed',color='red')
+plt.plot(times,-np.pi/2*np.ones(len(times)),linestyle='dashed',color='red')
 plt.show()
 J_track=np.array(J_track)
 plt.plot(times,J_track.real/J_scale)
@@ -215,8 +232,19 @@ plt.plot(times,J_field,linestyle='--')
 plt.show()
 neighbour_track=np.array(neighbour_track)
 plt.plot(times,neighbour_track.imag)
+plt.plot(times,neighbour.imag)
 plt.show()
+plt.plot(times,neighbour.real)
 plt.plot(times,neighbour_track.real)
+plt.show()
+
+plt.plot(times,phi_track-phi_original)
+plt.plot(times,(neighbour_track-neighbour).real)
+plt.plot(times,(neighbour_track-neighbour).imag)
+plt.show()
+
+plt.plot(times,np.angle(neighbour_track)-np.angle(neighbour))
+plt.plot(times,phi_track-phi_original)
 plt.show()
 # psi_t = evolve(psi_0, 0, times, tracking_evolution)
 

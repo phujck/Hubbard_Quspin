@@ -11,7 +11,7 @@ import sys
 
 """Open MP and MKL should speed up the time required to run these simulations!"""
 # threads = sys.argv[1]
-threads = 6
+threads = 64
 os.environ['OMP_NUM_THREADS'] = '{}'.format(threads)
 os.environ['MKL_NUM_THREADS'] = '{}'.format(threads)
 # line 4 and line 5 below are for development purposes and can be remove
@@ -21,6 +21,7 @@ from quspin.tools.measurements import obs_vs_time  # calculating dynamics
 import numpy as np  # general math functions
 from scipy.sparse.linalg import eigsh
 from time import time  # tool for calculating computation time
+from tqdm import tqdm
 import matplotlib.pyplot as plt  # plotting library
 
 sys.path.append('../')
@@ -31,13 +32,13 @@ print("logical cores available {}".format(psutil.cpu_count(logical=True)))
 t_init = time()
 np.__config__.show()
 """Hubbard model Parameters"""
-L = 6# system size
+L = 10# system size
 N_up = L // 2 + L % 2  # number of fermions with spin up
 N_down = L // 2  # number of fermions with spin down
 N = N_up + N_down  # number of particles
 t0 = 0.52  # hopping strength
 # U = 0*t0  # interaction strength
-U = 1 * t0  # interaction strength
+U = 0.5 * t0  # interaction strength
 pbc = True
 
 """Laser pulse parameters"""
@@ -83,7 +84,8 @@ outfile = './Data/expectations:{}sites-{}up-{}down-{}t0-{}U-{}cycles-{}steps-{}p
 # build spinful fermions basis. It's possible to specify certain symmetry sectors here, but I'm not going to touch that
 # until I understand it better.
 basis = spinful_fermion_basis_1d(L, Nf=(N_up, N_down))
-#
+print('Hilbert space size: {0:d}.\n'.format(basis.Ns))
+
 """building model"""
 # define site-coupling lists
 int_list = [[lat.U, i, i] for i in range(L)]  # onsite interaction
@@ -121,6 +123,7 @@ operator_dict = dict(H=ham)
 no_checks = dict(check_pcon=False, check_symm=False, check_herm=False)
 # hopping operators for building current. Note that the easiest way to build an operator is just to cast it as an
 # instance of the Hamiltonian class. Note in this instance the hops up and down have the e^iphi factor attached directly
+operator_dict['neighbour']= hamiltonian([["+-|", hop_left],["|+-", hop_left]],[], basis=basis, **no_checks)
 operator_dict["lhopup"] = hamiltonian([], [["+-|", hop_left, expiphiconj, dynamic_args]], basis=basis, **no_checks)
 operator_dict["lhopdown"] = hamiltonian([], [["|+-", hop_left, expiphiconj, dynamic_args]], basis=basis, **no_checks)
 # Add individual spin expectations
@@ -161,7 +164,7 @@ ti = time()
 expectations = obs_vs_time(psi_t, times, operator_dict)
 print(type(expectations))
 current_partial = (expectations['lhopup'] + expectations['lhopdown'])
-current = -1j * lat.a * (current_partial - current_partial.conjugate())
+current = 1j * lat.a * (current_partial - current_partial.conjugate())
 expectations['current'] = current
 expectations['phi']=phi(times)
 print("Expectations calculated! This took {:.2f} seconds".format(time() - ti))
