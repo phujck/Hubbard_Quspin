@@ -46,7 +46,7 @@ plt.rcParams.update(params)
 
 
 """Hubbard model Parameters"""
-L = 6  # system size
+L = 12 # system size
 N_up = L // 2 + L % 2  # number of fermions with spin up
 N_down = L // 2  # number of fermions with spin down
 N = N_up + N_down  # number of particles
@@ -63,7 +63,7 @@ lat = hhg(field=field, nup=N_up, ndown=N_down, nx=L, ny=0, U=U, t=t0, F0=F0, a=a
 
 """System Evolution Time"""
 cycles = 10  # time in cycles of field frequency
-n_steps = 1000
+n_steps = 2000
 start = 0
 # real time
 # stop = cycles / lat.freq

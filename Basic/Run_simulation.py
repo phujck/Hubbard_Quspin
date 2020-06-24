@@ -11,7 +11,9 @@ import sys
 
 """Open MP and MKL should speed up the time required to run these simulations!"""
 # threads = sys.argv[1]
-threads = 64
+threads = 16
+os.environ['NUMEXPR_MAX_THREADS']='{}'.format(threads)
+os.environ['NUMEXPR_NUM_THREADS']='{}'.format(threads)
 os.environ['OMP_NUM_THREADS'] = '{}'.format(threads)
 os.environ['MKL_NUM_THREADS'] = '{}'.format(threads)
 # line 4 and line 5 below are for development purposes and can be remove
@@ -32,14 +34,14 @@ print("logical cores available {}".format(psutil.cpu_count(logical=True)))
 t_init = time()
 np.__config__.show()
 """Hubbard model Parameters"""
-L = 10# system size
+L = 6# system size
 N_up = L // 2 + L % 2  # number of fermions with spin up
 N_down = L // 2  # number of fermions with spin down
 N = N_up + N_down  # number of particles
 t0 = 0.52  # hopping strength
 # U = 0*t0  # interaction strength
-U = 0.5 * t0  # interaction strength
-pbc = True
+U = 0* t0  # interaction strength
+pbc = False
 
 """Laser pulse parameters"""
 field = 32.9  # field angular frequency THz
@@ -70,7 +72,7 @@ dynamic_args = []
 
 """System Evolution Time"""
 cycles = 10  # time in cycles of field frequency
-n_steps = 2000
+n_steps = 10000
 start = 0
 stop = cycles / lat.freq
 times, delta = np.linspace(start, stop, num=n_steps, endpoint=True, retstep=True)

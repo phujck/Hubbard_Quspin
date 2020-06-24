@@ -8,7 +8,9 @@ import sys
 
 """Open MP and MKL should speed up the time required to run these simulations!"""
 # threads = sys.argv[1]
-threads = 10
+threads = 16
+os.environ['NUMEXPR_MAX_THREADS']='{}'.format(threads)
+os.environ['NUMEXPR_NUM_THREADS']='{}'.format(threads)
 os.environ['OMP_NUM_THREADS'] = '{}'.format(threads)
 os.environ['MKL_NUM_THREADS'] = '{}'.format(threads)
 # line 4 and line 5 below are for development purposes and can be remove
@@ -30,14 +32,14 @@ print("logical cores available {}".format(psutil.cpu_count(logical=True)))
 t_init = time()
 np.__config__.show()
 """ Original Hubbard model Parameters"""
-L = 10# system size
+L = 6# system size
 N_up = L // 2 + L % 2  # number of fermions with spin up
 N_down = L // 2  # number of fermions with spin down
 N = N_up + N_down  # number of particles
 t0 = 0.52  # hopping strength
 # U = 0*t0  # interaction strength
-U = 0.5 * t0  # interaction strength
-pbc = True
+U = 1 * t0  # interaction strength
+pbc = False
 
 """Laser pulse parameters"""
 field = 32.9  # field angular frequency THz
@@ -54,7 +56,7 @@ N = N_up_track + N_down_track  # number of particles
 t0_track = 0.52  # hopping strength
 # U = 0*t0  # interaction strength
 U_track = U  # interaction strength
-pbc_track = True
+pbc_track = pbc
 a_track=a*a_scale
 
 """instantiate parameters with proper unit scaling"""
@@ -82,17 +84,17 @@ J_field=expectations["current"]
 phi_original=expectations["phi"]
 neighbour=-expectations["neighbour"]/lat.t
 """Interpolates the current to be tracked."""
-J_target = interp1d(times, J_scale*J_field, fill_value=0, bounds_error=False, kind='cubic')
+J_target = interp1d(times, J_scale*J_field, fill_value='extrapolate', bounds_error=False, kind='cubic')
 
 
 """create basis"""
 # build spinful fermions basis. It's possible to specify certain symmetry sectors here, but I'm not going to touch that
 # until I understand it better.
-basis = spinful_fermion_basis_1d(L, Nf=(N_up, N_down))
+basis = spinful_fermion_basis_1d(L_track, Nf=(N_up, N_down))
 #
 """building model"""
 # define site-coupling lists
-int_list = [[lat_track.U, i, i] for i in range(L)]  # onsite interaction
+int_list = [[lat_track.U, i, i] for i in range(L_track)]  # onsite interaction
 
 # create static lists
 # Note that the pipe determines the spinfulness of the operator. | on the left corresponds to down spin, | on the right
@@ -102,13 +104,13 @@ static_Hamiltonian_list = [
 ]
 
 # hopping operator lists.
-hop_right = [[-1, i, i + 1] for i in range(L - 1)]  # hopping to the right OBC
-hop_left = [[1, i, i + 1] for i in range(L - 1)]  # hopping to the left OBC
+hop_right = [[-1, i, i + 1] for i in range(L_track - 1)]  # hopping to the right OBC
+hop_left = [[1, i, i + 1] for i in range(L_track - 1)]  # hopping to the left OBC
 
 """Add periodic boundaries"""
 if lat.pbc:
-    hop_right.append([-1, L - 1, 0])
-    hop_left.append([1, L - 1, 0])
+    hop_right.append([-1, L_track - 1, 0])
+    hop_left.append([1, L_track - 1, 0])
 
 # After creating the site lists, we attach an operator and a time-dependent function to them
 no_checks = dict(check_pcon=False, check_symm=False, check_herm=False)
@@ -186,6 +188,22 @@ def tracking_evolution(current_time,psi):
     psi_dot += 1j*lat_track.t*np.exp(1j*phi)*hop_right_op.dot(psi)
     return psi_dot
 
+# def tracking_evolution(current_time,psi):
+#     # print(neighbour_track[-1])
+#     # D=neighbour_track[-1]
+#     phi=phi_track[-1]
+#     # phi = (lat.a * lat.F0 / lat.field) * (np.sin(lat.field * current_time / (2. * cycles)) ** 2.) * np.sin(
+#     #     lat.field * current_time)
+#     glob_times.append(current_time)
+#     # print(phi)
+#     # print(phi)
+#     # integrate static part of GPE
+#     psi_dot = -1j * (ham_onsite.dot(psi))
+#     psi_dot += 1j*lat_track.t*np.exp(-1j*phi)*hop_left_op.dot(psi)
+#     psi_dot += 1j*lat_track.t*np.exp(1j*phi)*hop_right_op.dot(psi)
+#     return psi_dot
+
+
 phi_track=[]
 neighbour_track=[]
 J_track=[]
@@ -201,7 +219,8 @@ for newtime in tqdm(times[:-1]):
     # evolve forward by a single step. This is almost certainly not efficient, but is a first pass.
     """this version uses Quspin default, dop853"""
     # print(psi_t.shape)
-    psi_t = evolve(psi_t, newtime, np.array([newtime + delta]), tracking_evolution)
+    solver_args=dict(atol=1e-12)
+    psi_t = evolve(psi_t, newtime, np.array([newtime + delta]), tracking_evolution,**solver_args)
     # print(psi_t.shape)
 
     """this version uses lsoda. It is unforgivably slow"""
@@ -211,7 +230,12 @@ for newtime in tqdm(times[:-1]):
     psi_t = psi_t.reshape(-1)
     """append expectations at each step"""
     neighbour_track.append(hop_left_op.expt_value(psi_t))
-    phi_track.append(phi_J_track(lat_track,newtime+delta,J_target,neighbour_track[-1]))
+    newphi=phi_J_track(lat_track,newtime+delta,J_target,neighbour_track[-1])
+    if newphi-phi_track[-1] > 1.2*np.pi:
+        newphi=newphi-2*np.pi
+    elif newphi-phi_track[-1] < -1.2*np.pi:
+        newphi = newphi + 2 * np.pi
+    phi_track.append(newphi)
     current_partial=lat_track.a * lat_track.t*np.exp(-1j * phi_track[-1])*neighbour_track[-1]
     current = -1j * (current_partial - current_partial.conjugate())
     J_track.append(current)
@@ -219,7 +243,7 @@ for newtime in tqdm(times[:-1]):
 print("Evolution and expectation calculated! This one took {:.2f} seconds".format(time() - ti))
 # Simple plot to check things are behaving.
 
-plt.plot(glob_times,'-*')
+plt.plot(np.gradient(glob_times),'-*')
 plt.show()
 plt.plot(times,phi_track)
 plt.plot(times,phi_original)
