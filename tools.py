@@ -5,10 +5,15 @@
 #########################################################################
 
 """reasonably self explanatory. This class scales parameters to units of t0 (a'.u units)"""
+import numpy as np
+list1=[0,1,2]
+list2=[3,4,5]
 
+for (a,b) in zip(list1,list2):
+    print(a,b)
 
 class parameter_instantiate:
-    def __init__(self, field, nup, ndown, nx, ny, U, t=0.52, SO=0, F0=10., a=4., lat_type='square', pbc=True):
+    def __init__(self, field=0, nup=1, ndown=1, nx=2, ny=0, U=0.52, t=0.52, SO=0, F0=10., a=4., pbc=True,gamma=0,mu=0):
         self.nx = nx
         self.pbc = pbc
         if pbc:
@@ -28,8 +33,12 @@ class parameter_instantiate:
         # factor=1
         self.factor = factor
         # self.factor=1
+        self.mu=mu
+        print('mu={:.3f}'.format(self.mu))
         self.U = U / t
         self.SO = SO / t
+        self.gamma=gamma/np.sqrt(factor)
+        print('gamma= {:.3f} (t_0)^0.5'.format(self.gamma))
         if type(self.U) is float:
             print("U= %.3f t_0" % self.U)
         else:

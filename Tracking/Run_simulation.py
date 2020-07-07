@@ -32,14 +32,14 @@ print("logical cores available {}".format(psutil.cpu_count(logical=True)))
 t_init = time()
 np.__config__.show()
 """ Original Hubbard model Parameters"""
-L = 6# system size
+L = 12# system size
 N_up = L // 2 + L % 2  # number of fermions with spin up
 N_down = L // 2  # number of fermions with spin down
 N = N_up + N_down  # number of particles
 t0 = 0.52  # hopping strength
 # U = 0*t0  # interaction strength
-U = 1 * t0  # interaction strength
-pbc = False
+U = 1* t0  # interaction strength
+pbc = True
 
 """Laser pulse parameters"""
 field = 32.9  # field angular frequency THz
@@ -91,6 +91,9 @@ J_target = interp1d(times, J_scale*J_field, fill_value='extrapolate', bounds_err
 # build spinful fermions basis. It's possible to specify certain symmetry sectors here, but I'm not going to touch that
 # until I understand it better.
 basis = spinful_fermion_basis_1d(L_track, Nf=(N_up, N_down))
+# basis = spinful_fermion_basis_1d(L_track, Nf=(N_up, N_down),sblock=1)
+basis = spinful_fermion_basis_1d(L, Nf=(N_up, N_down),a=1,kblock=1)
+
 #
 """building model"""
 # define site-coupling lists

@@ -28,21 +28,21 @@ from tools import parameter_instantiate as hhg  # Used for scaling units.
 t_init = time()
 
 """Hubbard model Parameters"""
-L = 10  # system size
+L = 8  # system size
 N_up = L // 2  # number of fermions with spin up
 N_down = L // 2  # number of fermions with spin down
 # N_up = 5  # number of fermions with spin up
 # N_down = 5  # number of fermions with spin down
 N = N_up + N_down  # number of particles
 t0 = 0.52  # hopping strength
-SO = 10 * t0  # spin orbit coupling
+SO = 0 * t0  # spin orbit coupling
 # U = 0*t0  # interaction strength
 U = 1 * t0  # interaction strength
 pbc = True
 
 """Set up the partition of the system's onsite potentials"""
 U_a = 0 * t0
-U_b = 10 * t0
+U_b = 0.00 * t0
 partition = 5
 U = []
 for n in range(L):
@@ -104,6 +104,8 @@ outfile = './Data/expectations:{}sites-{}up-{}down-{}t0-{}U-{}SO-{}cycles-{}step
 # build spinful fermions basis. It's possible to specify certain symmetry sectors here, but I'm not going to touch that
 # until I understand it better.
 basis = spinful_fermion_basis_1d(L, Nf=(N_up, N_down))
+# basis = spinful_fermion_basis_1d(L, Nf=(N_up, N_down),sblock=1,kblock=1)
+
 #
 """building model"""
 ###########################################################################

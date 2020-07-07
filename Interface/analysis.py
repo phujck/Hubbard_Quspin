@@ -62,7 +62,7 @@ plt.rcParams.update(params)
 # print(plt.rcParams.keys())
 
 """Hubbard model Parameters"""
-L = 10  # system size
+L = 10 # system size
 N_up = 5  # number of fermions with spin up
 N_down = 5  # number of fermions with spin down
 N = N_up + N_down  # number of particles
@@ -75,7 +75,7 @@ pbc = True
 """Set up the partition of the system's onsite potentials"""
 U_a = 0 * t0
 U_b = 0 * t0
-partition = 5
+partition = 4
 U = []
 for n in range(L):
     # if n < int(nx/2):
@@ -92,20 +92,20 @@ a = 4  # Lattice constant Angstroms
 
 """Second set of parameters to mod"""
 """Hubbard model Parameters"""
-L2 = 8  # system size
-N_up2 = 4  # number of fermions with spin up
-N_down2 = 4  # number of fermions with spin down
+L2 = 10  # system size
+N_up2 = 5  # number of fermions with spin up
+N_down2 = 5  # number of fermions with spin down
 N2 = N_up2 + N_down2  # number of particles
 t02 = 0.52  # hopping strength
-SO2 = 10 * t0  # spin orbit coupling
+SO2 = 0 * t0  # spin orbit coupling
 # U = 0*t0  # interaction strength
-U2 = 1 * t0  # interaction strength
+U2 = 0 * t0  # interaction strength
 pbc2 = True
 
 """Set up the partition of the system's onsite potentials"""
 U_a2 = 0 * t0
 U_b2 = 0 * t0
-partition2 = 4
+partition2 = 5
 U2 = []
 for n in range(L2):
     # if n < int(nx/2):
