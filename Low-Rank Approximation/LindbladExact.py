@@ -36,7 +36,7 @@ print("logical cores available {}".format(psutil.cpu_count(logical=True)))
 t_init = time()
 np.__config__.show()
 """Hubbard model Parameters"""
-SysParams=False #choose which set to take from sysparams
+SysParams=True #choose which set to take from sysparams
 if SysParams:
     L = params.L # system size
     N_up = params.N_up  # number of fermions with spin up
@@ -73,7 +73,7 @@ else:
     delta=params.delta
 
 """instantiate parameters with proper unit scaling"""
-lat = hhg(nup=N_up, ndown=N_down, nx=L, ny=0, U=U, t=t0, pbc=pbc, gamma=gamma)
+lat = hhg(nup=N_up, ndown=N_down, nx=L, ny=0, U=U, t=t0, pbc=pbc, gamma=gamma,mu=mu)
 """Define e^i*phi for later dynamics. Important point here is that for later implementations of tracking, we
 will pass phi as a global variable that will be modified as appropriate during evolution"""
 """set up parameters for saving expectations later"""
@@ -185,8 +185,8 @@ for j in range(L):
 
 if lat.gamma:
     print('I live!')
-    pos_rate = np.sqrt(gamma * (1 + mu))
-    neg_rate = np.sqrt(gamma * (1 - mu))
+    pos_rate = np.sqrt(lat.gamma * (1 + lat.mu))
+    neg_rate = np.sqrt(lat.gamma * (1 - lat.mu))
     pos_start = [[pos_rate, 0]]
     pos_end = [[pos_rate, L - 1]]
     neg_start = [[neg_rate, 0]]
@@ -208,16 +208,16 @@ if lat.gamma:
 
 """build ground state"""
 print("calculating ground state")
-# E, psi_0 = H.eigsh(k=1, which='SA')
+E, psi_0 = H.eigsh(k=1, which='SA')
 # apparently you can get a speedup for the groundstate calculation using this method with multithread. Note that it's
 # really not worth it unless you your number of sites gets _big_, and even then it's the time evolution which is going
 # to kill you:
-E, psi_0 = eigsh(H.aslinearoperator(time=0), k=1, which='SA')
+# E, psi_0 = eigsh(H.aslinearoperator(time=0), k=1, which='SA')
 
 print(type(psi_0))
 print(psi_0.size)
 # rho_0=np.outer(psi_0,psi_0)
-rho_0=np.dot(psi_0,psi_0.T)
+rho_0=np.dot(psi_0.conj(),psi_0.T)
 print(rho_0.shape)
 
 

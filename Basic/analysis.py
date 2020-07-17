@@ -57,7 +57,7 @@ N_down = L // 2  # number of fermions with spin down
 N = N_up + N_down  # number of particles
 t0 = 0.52  # hopping strength
 # U = 0*t0  # interaction strength
-U = 0 * t0  # interaction strength
+U = 1 * t0  # interaction strength
 pbc = True
 
 """Laser pulse parameters"""

@@ -87,8 +87,8 @@ outfile = './Data/expectations:{}sites-{}up-{}down-{}t0-{}U-{}cycles-{}steps-{}p
 """create basis"""
 # build spinful fermions basis. It's possible to specify certain symmetry sectors here, but I'm not going to touch that
 # until I understand it better.
-# basis = spinful_fermion_basis_1d(L, Nf=(N_up, N_down))
-basis = spinful_fermion_basis_1d(L, Nf=(N_up, N_down),sblock=1,kblock=1)
+basis = spinful_fermion_basis_1d(L, Nf=(N_up, N_down))
+basis = spinful_fermion_basis_1d(L, Nf=(N_up, N_down),a=1,sblock=1,kblock=1)
 # basis = spinful_fermion_basis_1d(L, Nf=(N_up, N_down),sblock=1)
 
 print('Hilbert space size: {0:d}.\n'.format(basis.Ns))
@@ -180,7 +180,7 @@ ti = time()
 
 # this version returns psi directly, last dimension contains time dynamics. The squeeze is necessary for the
 # obs_vs_time to work properly
-psi_t = ham.evolve(psi_0, 0.0, times,verbose=False)
+psi_t = ham.evolve(psi_0, 0.0, times,verbose=True)
 psi_t = np.squeeze(psi_t)
 print("Evolution done! This one took {:.2f} seconds".format(time() - ti))
 # calculate the expectations for every bastard in the operator dictionary
