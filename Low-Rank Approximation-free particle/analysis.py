@@ -342,7 +342,7 @@ deviation=[]
 exact_J=J_field
 ranks=[]
 evotimes=[]
-for rank in [2,4,64,128]:
+for rank in [2,4,8,16,32,64,128,256]:
     outfile = './Data/Approx/expectations:{}sites-{}up-{}down-{}t0-{}U-{}t_max-{}steps-{}gamma-{}mu-{}rank-{}pbc.npz'.format(
         L,
         N_up,
@@ -359,7 +359,7 @@ for rank in [2,4,64,128]:
     J_field=expectations['current']
     deviation.append(delta*np.sum(np.sqrt(((J_field-exact_J))**2)))
 
-for rank in [2,4,64,128]:
+for rank in [2,32,64,128,256]:
     outfile = './Data/Approx/expectations:{}sites-{}up-{}down-{}t0-{}U-{}t_max-{}steps-{}gamma-{}mu-{}rank-{}pbc.npz'.format(
         L,
         N_up,
