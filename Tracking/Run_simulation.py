@@ -32,13 +32,13 @@ print("logical cores available {}".format(psutil.cpu_count(logical=True)))
 t_init = time()
 np.__config__.show()
 """ Original Hubbard model Parameters"""
-L = 12# system size
+L = 10# system size
 N_up = L // 2 + L % 2  # number of fermions with spin up
 N_down = L // 2  # number of fermions with spin down
 N = N_up + N_down  # number of particles
 t0 = 0.52  # hopping strength
 # U = 0*t0  # interaction strength
-U = 1* t0  # interaction strength
+U = 5*t0  # interaction strength
 pbc = True
 
 """Laser pulse parameters"""
@@ -55,7 +55,7 @@ N_down_track = L_track // 2  # number of fermions with spin down
 N = N_up_track + N_down_track  # number of particles
 t0_track = 0.52  # hopping strength
 # U = 0*t0  # interaction strength
-U_track = U  # interaction strength
+U_track = 0  # interaction strength
 pbc_track = pbc
 a_track=a*a_scale
 
@@ -168,10 +168,18 @@ def phi_J_track(lat, current_time, J_target, nn_expec):
     scalefactor = 2 * lat.a * lat.t * mag
     # assert np.abs(current)/scalefactor <=1, ('Current too large to reproduce, ration is %s' % np.abs(current/scalefactor))
     arg = -current / (2 * lat.a * lat.t * mag)
+    # if arg > 1:
+    #     arg=2-(arg)
+    # elif arg <-1:
+    #     arg=-2-arg
     phi = np.arcsin(arg + 0j) + angle
     # phi = np.arcsin(arg + 0j)
     # Solver is sensitive to whether we specify phi as real or not!
-    phi=phi.real
+    # counter =0
+    #     # if phi.imag and counter <2:
+    #     #     counter+=1
+    #     #     phi=phi.real
+    phi = phi.real
     return phi
 
 glob_times=[]
@@ -222,8 +230,10 @@ for newtime in tqdm(times[:-1]):
     # evolve forward by a single step. This is almost certainly not efficient, but is a first pass.
     """this version uses Quspin default, dop853"""
     # print(psi_t.shape)
-    solver_args=dict(atol=1e-12)
-    psi_t = evolve(psi_t, newtime, np.array([newtime + delta]), tracking_evolution,**solver_args)
+    # solver_args=dict(atol=1e-3)
+    # psi_t = evolve(psi_t, newtime, np.array([newtime + delta]), tracking_evolution,**solver_args)
+    psi_t = evolve(psi_t, newtime, np.array([newtime + delta]), tracking_evolution)
+
     # print(psi_t.shape)
 
     """this version uses lsoda. It is unforgivably slow"""
@@ -246,23 +256,35 @@ for newtime in tqdm(times[:-1]):
 print("Evolution and expectation calculated! This one took {:.2f} seconds".format(time() - ti))
 # Simple plot to check things are behaving.
 
-plt.plot(np.gradient(glob_times),'-*')
-plt.show()
+# plt.plot(np.gradient(glob_times),'-*')
+# plt.show()
+
 plt.plot(times,phi_track)
 plt.plot(times,phi_original)
 plt.plot(times,np.pi/2*np.ones(len(times)),linestyle='dashed',color='red')
 plt.plot(times,-np.pi/2*np.ones(len(times)),linestyle='dashed',color='red')
+plt.ylabel('$\\Phi$')
+plt.show()
+plt.plot(times,np.angle(neighbour_track))
+plt.plot(times,np.angle(neighbour))
+plt.plot(times,np.pi/2*np.ones(len(times)),linestyle='dashed',color='red')
+plt.plot(times,-np.pi/2*np.ones(len(times)),linestyle='dashed',color='red')
+plt.ylabel('$\\theta$')
+plt.show()
+plt.plot(times,phi_track-np.angle(neighbour_track))
+plt.plot(times,phi_original-np.angle(neighbour))
+plt.plot(times,np.pi/2*np.ones(len(times)),linestyle='dashed',color='red')
+plt.plot(times,-np.pi/2*np.ones(len(times)),linestyle='dashed',color='red')
+plt.ylabel('$\\Phi-\\theta$')
 plt.show()
 J_track=np.array(J_track)
 plt.plot(times,J_track.real/J_scale)
 plt.plot(times,J_field,linestyle='--')
 plt.show()
 neighbour_track=np.array(neighbour_track)
-plt.plot(times,neighbour_track.imag)
-plt.plot(times,neighbour.imag)
-plt.show()
 plt.plot(times,neighbour.real)
 plt.plot(times,neighbour_track.real)
+plt.ylabel('$R(t)$')
 plt.show()
 
 plt.plot(times,phi_track-phi_original)
@@ -288,8 +310,8 @@ np.savez(outfile+str, **expectations)
 print('All finished. Total time was {:.2f} seconds using {:d} threads'.format((time() - t_init), threads))
 
 """tests that things saved properly"""
-# npzfile = np.load(outfile)
-# print('npzfile.files: {}'.format(npzfile.files))
+npzfile = np.load(outfile+str+'.npz')
+print('npzfile.files: {}'.format(npzfile.files))
 #
 # current=npzfile["tracking_current"+str]
 # old_current=npzfile["current"]

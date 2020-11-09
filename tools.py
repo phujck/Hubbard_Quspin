@@ -38,6 +38,7 @@ class parameter_instantiate:
         self.U = U / t
         self.SO = SO / t
         self.gamma=gamma/np.sqrt(factor)
+        # self.gamma=gamma/t
         print('gamma= {:.3f} (t_0)^0.5'.format(self.gamma))
         if type(self.U) is float:
             print("U= %.3f t_0" % self.U)

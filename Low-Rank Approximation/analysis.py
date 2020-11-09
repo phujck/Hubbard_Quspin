@@ -50,13 +50,15 @@ def plot_spectra(U, w, spec, min_spec, max_harm):
 
 
 params = {
-    'axes.labelsize': 30,
+    'axes.labelsize': 40,
     # 'legend.fontsize': 28,
-    'legend.fontsize': 23,
-    'xtick.labelsize': 22,
-    'ytick.labelsize': 22,
-    'figure.figsize': [5.2 * 3.375, 3.5 * 3.375],
-    'text.usetex': True
+    'legend.fontsize': 28,
+    'xtick.labelsize': 28,
+    'ytick.labelsize': 28,
+    'figure.figsize': [20, 12],
+    'text.usetex': True,
+    'lines.linewidth' : 3,
+    'lines.markersize' : 15
 }
 plt.rcParams.update(params)
 # print(plt.rcParams.keys())
@@ -117,6 +119,7 @@ print('expectations available: {}'.format(expectations.files))
 
 """load expectations. For densities, time is first dimension, site number is second"""
 J_field = expectations['current']
+def_J=J_field
 up_densities = np.vstack([expectations["nup" + str(j)] for j in range(L)]).T
 down_densities = np.vstack([expectations["ndown" + str(j)] for j in range(L)]).T
 D_densities = np.vstack([expectations["D" + str(j)] for j in range(L)]).T
@@ -280,6 +283,14 @@ print(D_densities2.shape)
 # plt.legend(loc=1)
 # plt.show()
 plt.subplot(211)
+exact = np.gradient(J_field, delta)
+exact2 = np.gradient(J_field2, delta2)
+# plt.plot(times2, J_field2,label='low-rank',color='red')
+# plt.plot(times,J_field,linestyle='--',label='exact',color='black')
+
+# alternate
+J_field=exact
+J_field2=exact2
 plt.plot(times2, J_field2,label='low-rank',color='red')
 plt.plot(times,J_field,linestyle='--',label='exact',color='black')
 # plt.plot(times2, ndimage.gaussian_filter(J_field2.real,1,1),label='low-rank',color='red')
@@ -294,8 +305,7 @@ method = 'welch'
 min_spec = 18
 max_harm = 15
 gabor = 'fL'
-exact = np.gradient(J_field, delta)
-exact2 = np.gradient(J_field2, delta2)
+
 w, spec = spectrum_welch(exact.real, delta)
 w2, spec2 = spectrum_welch(exact2.real, delta2)
 w *= 2. * np.pi
@@ -317,8 +327,17 @@ plt.ylabel('HHG spectra')
 plt.show()
 print(expectations2['evotime'])
 
+
+
 plt.subplot(211)
+plt.grid(True)
+# Look at dipole acceleration instead
+# J_field=np.gradient(J_field, delta)
 plt.plot(times, J_field,linestyle='--',label='exact',color='black')
+
+# exact = np.gradient(J_field, delta)
+# plt.plot(times, exact,linestyle='--',label='exact',color='black')
+
 plt.xlabel('Time')
 plt.ylabel('$J(t)$')
 plt.legend(loc='upper left')
@@ -326,10 +345,9 @@ plt.legend(loc='upper left')
 prev_max=0
 plt.subplot(212)
 method = 'welch'
-min_spec = 15
+min_spec = 18
 max_harm = 10
 gabor = 'fL'
-exact = np.gradient(J_field, delta)
 w, spec = spectrum_welch(exact.real, delta)
 w *= 2. * np.pi
 plt.semilogy(w, spec, linestyle='--',color='black')
@@ -346,7 +364,7 @@ deviation=[]
 exact_J=J_field
 ranks=[]
 evotimes=[]
-for rank in [2,8,16,32,65,127,256]:
+for rank in [16,32,65,127,256]:
     outfile = './Data/Approx/expectations:{}sites-{}up-{}down-{}t0-{}U-{}t_max-{}steps-{}gamma-{}mu-{}rank-{}pbc.npz'.format(
         L,
         N_up,
@@ -361,9 +379,12 @@ for rank in [2,8,16,32,65,127,256]:
     ranks.append(rank)
     evotimes.append(expectations['evotime'])
     J_field=expectations['current']
-    deviation.append(delta*np.sum(np.sqrt(((J_field-exact_J))**2)))
+    J_field=np.gradient(J_field,delta)
+    deviation.append(np.sum((J_field-exact)**2)/np.sum(exact**2))
+    # deviation.append(delta*np.sum(np.sqrt(((J_field-exact_J))**2)))
+    # deviation.append(delta*np.sum(np.sqrt(((np.gradient(J_field,delta)-np.gradient(exact_J,delta))/np.gradient(exact_J,delta))**2)))
 
-for rank in [2, 8, 16, 64,128,256]:
+for rank in [16,32,64,128]:
     outfile = './Data/Approx/expectations:{}sites-{}up-{}down-{}t0-{}U-{}t_max-{}steps-{}gamma-{}mu-{}rank-{}pbc.npz'.format(
         L,
         N_up,
@@ -376,18 +397,27 @@ for rank in [2, 8, 16, 64,128,256]:
         pbc)
     expectations = np.load(outfile)
     J_field=expectations['current']
-    plt.subplot(211)
-    plt.plot(times, J_field,label='rank={}'.format(rank))
-    plt.legend(loc='upper left')
-    plt.subplot(212)
     exact = np.gradient(J_field, delta)
+    plt.subplot(211)
+    plt.grid(True)
+    plt.plot(times,exact,label='rank={}'.format(rank))
+    # plt.plot(times, J_field,label='rank={}'.format(rank))
+    plt.legend(loc='lower right')
+    plt.subplot(212)
+    plt.grid(True)
+    # exact=J_field
     w, spec = spectrum_welch(exact.real, delta)
-    w *= 2. * np.pi
+    w *= 2. * np.pi*lat.gamma
     plt.semilogy(w, spec)
-for xc in xlines:
-    plt.axvline(x=xc, color='black', linestyle='dashed')
+    axes = plt.gca()
+    axes.set_xlim([0, max_harm])
+    if spec.max() > prev_max:
+        prev_max = spec.max() * 5
+    axes.set_ylim([10 ** (-min_spec), prev_max])
+# for xc in xlines:
+#     plt.axvline(x=xc, color='black', linestyle='dashed')
 plt.xlabel('$\\omega$')
-plt.ylabel('HHG spectra')
+plt.ylabel('Power spectra')
 # plt.legend(loc='upper right')
 plt.savefig('./Plots/currentsvsrank' + figparams,
             bbox_inches='tight')
@@ -402,5 +432,60 @@ plt.subplot(212)
 plt.plot(ranks,deviation,'-x')
 plt.ylabel('$\epsilon$')
 plt.xlabel('Rank')
-plt.savefig('./Plots/runtimeanderror' + figparams,bbox_inches='tight')
+
 plt.show()
+
+
+plt.loglog(evotimes,deviation,'-x')
+plt.grid(True)
+# plt.plot(evotimes,deviation)
+plt.ylabel('Error')
+plt.xlabel('Computation Time (s)')
+plt.vlines(exact_time,ymin=7*10**-5,ymax=2*10**2,linestyles='dashed',colors='black',label='Exact Simulation Time')
+plt.ylim(7*10**-5,2*10**2)
+plt.xlim(10**1,10**5)
+plt.legend(loc=0)
+plt.tight_layout()
+plt.show()
+
+
+for rank in [32,64,256]:
+    outfile = './Data/Approx/expectations:{}sites-{}up-{}down-{}t0-{}U-{}t_max-{}steps-{}gamma-{}mu-{}rank-{}pbc.npz'.format(
+        L,
+        N_up,
+        N_down,
+        t0, U,
+        t_max,
+        n_steps,
+        gamma,
+        mu, rank,
+        pbc)
+    expectations = np.load(outfile)
+    J_field=expectations['current']
+    # exact = J_field
+    exact = np.gradient(J_field, delta)
+    plt.subplot(211)
+    plt.xlabel('Time')
+    plt.ylabel('$a(t)$')
+    # plt.ylabel('$\\frac{\\partial J(t)}{\\partial t}$')
+    plt.grid(True)
+    plt.plot(times,exact,label='rank={}'.format(rank))
+    # plt.plot(times, J_field,label='rank={}'.format(rank))
+# exact_J=def_J
+plt.plot(times, exact_J, linestyle='--', label='Exact', color='black')
+plt.legend(loc='lower right')
+
+plt.subplot(212)
+plt.loglog(evotimes,deviation,'-o')
+plt.grid(True)
+# plt.plot(evotimes,deviation)
+plt.ylabel('$\\mathcal{E}$')
+plt.xlabel('Runtime (s)')
+plt.vlines(exact_time,ymin=7*10**-5,ymax=2*10**2,linestyles='dashed',colors='black',label='Exact Simulation Time')
+plt.ylim(10**-3,2*10**1)
+plt.xlim(10**2,10**5)
+plt.legend(loc=0)
+plt.tight_layout()
+plt.savefig('./Plots/FermiHubbardLowRank.pdf',bbox_inches='tight')
+plt.show()
+

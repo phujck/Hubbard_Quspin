@@ -80,7 +80,8 @@ times, delta = np.linspace(start, stop, num=n_steps, endpoint=True, retstep=True
 outfile = './Data/expectations:{}sites-{}up-{}down-{}t0-{}U-{}cycles-{}steps-{}pbc.npz'.format(L, N_up, N_down, t0, U,
                                                                                                cycles,
                                                                                                n_steps, pbc)
-U2=1.0001*t0
+# U2=1.0001*t0
+U2=0
 outfile2 = './Data/expectations:{}sites-{}up-{}down-{}t0-{}U-{}cycles-{}steps-{}pbc.npz'.format(L, N_up, N_down, t0, U2,
                                                                                                cycles,
                                                                                                n_steps, pbc)
