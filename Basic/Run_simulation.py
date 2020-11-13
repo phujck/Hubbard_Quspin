@@ -11,32 +11,38 @@ import sys
 
 """Open MP and MKL should speed up the time required to run these simulations!"""
 # threads = sys.argv[1]
-threads = 6
+threads = 16
+os.environ['NUMEXPR_MAX_THREADS']='{}'.format(threads)
+os.environ['NUMEXPR_NUM_THREADS']='{}'.format(threads)
 os.environ['OMP_NUM_THREADS'] = '{}'.format(threads)
 os.environ['MKL_NUM_THREADS'] = '{}'.format(threads)
-# line 4 and line 5 below are for development purposes and can be removed
-
+# line 4 and line 5 below are for development purposes and can be remove
 from quspin.operators import hamiltonian, exp_op, quantum_operator  # operators
 from quspin.basis import spinful_fermion_basis_1d  # Hilbert space basis
 from quspin.tools.measurements import obs_vs_time  # calculating dynamics
+from quspin.tools.evolution import evolve  #evolving system
 import numpy as np  # general math functions
 from scipy.sparse.linalg import eigsh
 from time import time  # tool for calculating computation time
+from tqdm import tqdm
 import matplotlib.pyplot as plt  # plotting library
+from quspin.tools.measurements import project_op
 
 sys.path.append('../')
 from tools import parameter_instantiate as hhg  # Used for scaling units.
-
+import psutil
+# note cpu_count for logical=False returns the wrong number for multi-socket CPUs.
+print("logical cores available {}".format(psutil.cpu_count(logical=True)))
 t_init = time()
-
+np.__config__.show()
 """Hubbard model Parameters"""
-L = 8  # system size
+L = 10# system size
 N_up = L // 2 + L % 2  # number of fermions with spin up
 N_down = L // 2  # number of fermions with spin down
 N = N_up + N_down  # number of particles
 t0 = 0.52  # hopping strength
 # U = 0*t0  # interaction strength
-U = 1 * t0  # interaction strength
+U = 5* t0  # interaction strength
 pbc = True
 
 """Laser pulse parameters"""
@@ -49,25 +55,26 @@ lat = hhg(field=field, nup=N_up, ndown=N_down, nx=L, ny=0, U=U, t=t0, F0=F0, a=a
 """Define e^i*phi for later dynamics. Important point here is that for later implementations of tracking, we
 will pass phi as a global variable that will be modified as appropriate during evolution"""
 
-
-def expiphi(current_time):
+def phi(current_time):
     phi = (lat.a * lat.F0 / lat.field) * (np.sin(lat.field * current_time / (2. * cycles)) ** 2.) * np.sin(
         lat.field * current_time)
-    return np.exp(1j * phi)
+    return phi
+def expiphi(current_time):
+
+    return np.exp(1j * phi(current_time))
 
 
 def expiphiconj(current_time):
-    phi = (lat.a * lat.F0 / lat.field) * (np.sin(lat.field * current_time / (2. * cycles)) ** 2.) * np.sin(
-        lat.field * current_time)
-    return np.exp(-1j * phi)
+
+    return np.exp(-1j * phi(current_time))
 
 
 """This is used for setting up Hamiltonian in Quspin."""
 dynamic_args = []
 
 """System Evolution Time"""
-cycles = 5  # time in cycles of field frequency
-n_steps = 1000
+cycles = 10  # time in cycles of field frequency
+n_steps = 2000
 start = 0
 stop = cycles / lat.freq
 times, delta = np.linspace(start, stop, num=n_steps, endpoint=True, retstep=True)
@@ -81,7 +88,11 @@ outfile = './Data/expectations:{}sites-{}up-{}down-{}t0-{}U-{}cycles-{}steps-{}p
 # build spinful fermions basis. It's possible to specify certain symmetry sectors here, but I'm not going to touch that
 # until I understand it better.
 basis = spinful_fermion_basis_1d(L, Nf=(N_up, N_down))
-#
+basis = spinful_fermion_basis_1d(L, Nf=(N_up, N_down),a=1,sblock=1,kblock=1)
+# basis = spinful_fermion_basis_1d(L, Nf=(N_up, N_down),sblock=1)
+
+print('Hilbert space size: {0:d}.\n'.format(basis.Ns))
+
 """building model"""
 # define site-coupling lists
 int_list = [[lat.U, i, i] for i in range(L)]  # onsite interaction
@@ -119,9 +130,10 @@ operator_dict = dict(H=ham)
 no_checks = dict(check_pcon=False, check_symm=False, check_herm=False)
 # hopping operators for building current. Note that the easiest way to build an operator is just to cast it as an
 # instance of the Hamiltonian class. Note in this instance the hops up and down have the e^iphi factor attached directly
+operator_dict['neighbour']= hamiltonian([["+-|", hop_left],["|+-", hop_left]],[], basis=basis, **no_checks)
 operator_dict["lhopup"] = hamiltonian([], [["+-|", hop_left, expiphiconj, dynamic_args]], basis=basis, **no_checks)
 operator_dict["lhopdown"] = hamiltonian([], [["|+-", hop_left, expiphiconj, dynamic_args]], basis=basis, **no_checks)
-# Add individual spin expectations
+# #Add individual spin expectations
 for j in range(L):
     # spin up densities for each site
     operator_dict["nup" + str(j)] = hamiltonian([["n|", [[1.0, j]]]], [], basis=basis, **no_checks)
@@ -133,12 +145,30 @@ for j in range(L):
 """build ground state"""
 print("calculating ground state")
 E, psi_0 = ham.eigsh(k=1, which='SA')
+# E, psi_0 = ham.eigh(time=0)
 
 # apparently you can get a speedup for the groundstate calculation using this method with multithread. Note that it's
 # really not worth it unless you your number of sites gets _big_, and even then it's the time evolution which is going
 # to kill you:
-# E, psi_0 = eigsh(ham.aslinearoperator(time=0), k=1, which='SA')
+# E, psi_0 = eigh(ham.aslinearoperator(time=0), k=1, which='SA')
 
+
+# alternate way of doing this
+# # psi_0=np.ones(ham.Ns)
+# psi_0=np.random.random(ham.Ns)
+# def imag_time(tau,phi):
+#
+# 	return -( ham.dot(phi,time=0))
+# taus=np.linspace(0,100,100)
+# psi_imag = evolve(psi_0, taus[0], taus, imag_time, iterate=False, atol=1E-12, rtol=1E-12,verbose=True,imag_time=True)
+# print(psi_imag.shape)
+# psi_0=psi_imag[:,-1]
+print(E)
+print(psi_0.shape)
+print('normalisation')
+# psi_0=psi_0[:,2]
+print(np.linalg.norm(psi_0))
+psi_0=psi_0/np.linalg.norm(psi_0)
 print("ground state calculated, energy is {:.2f}".format(E[0]))
 # psi_0.reshape((-1,))
 # psi_0=psi_0.flatten
@@ -150,7 +180,7 @@ ti = time()
 
 # this version returns psi directly, last dimension contains time dynamics. The squeeze is necessary for the
 # obs_vs_time to work properly
-psi_t = ham.evolve(psi_0, 0.0, times)
+psi_t = ham.evolve(psi_0, 0.0, times,verbose=True)
 psi_t = np.squeeze(psi_t)
 print("Evolution done! This one took {:.2f} seconds".format(time() - ti))
 # calculate the expectations for every bastard in the operator dictionary
@@ -159,8 +189,9 @@ ti = time()
 expectations = obs_vs_time(psi_t, times, operator_dict)
 print(type(expectations))
 current_partial = (expectations['lhopup'] + expectations['lhopdown'])
-current = -1j * lat.a * (current_partial - current_partial.conjugate())
+current = 1j * lat.a * (current_partial - current_partial.conjugate())
 expectations['current'] = current
+expectations['phi']=phi(times)
 print("Expectations calculated! This took {:.2f} seconds".format(time() - ti))
 
 print("Saving Expectations. We have {} of them".format(len(expectations)))
