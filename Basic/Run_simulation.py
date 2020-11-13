@@ -30,7 +30,7 @@ from tools import parameter_instantiate as hhg  # Used for scaling units.
 t_init = time()
 
 """Hubbard model Parameters"""
-L = 6  # system size
+L = 8  # system size
 N_up = L // 2 + L % 2  # number of fermions with spin up
 N_down = L // 2  # number of fermions with spin down
 N = N_up + N_down  # number of particles
@@ -73,7 +73,7 @@ stop = cycles / lat.freq
 times, delta = np.linspace(start, stop, num=n_steps, endpoint=True, retstep=True)
 
 """set up parameters for saving expectations later"""
-outfile = './Basic/Data/expectations:{}sites-{}up-{}down-{}t0-{}U-{}cycles-{}steps-{}pbc.npz'.format(L, N_up, N_down,
+outfile = './Data/expectations:{}sites-{}up-{}down-{}t0-{}U-{}cycles-{}steps-{}pbc.npz'.format(L, N_up, N_down,
                                                                                                      t0, U, cycles,
                                                                                                      n_steps, pbc)
 
