@@ -31,18 +31,18 @@ from quspin.tools.measurements import project_op
 sys.path.append('../')
 from tools import parameter_instantiate as hhg  # Used for scaling units.
 import psutil
-# note cpu_count for logical=False returns the wrong number for multi-socket CPUs.
+# # note cpu_count for logical=False returns the wrong number for multi-socket CPUs.
 print("logical cores available {}".format(psutil.cpu_count(logical=True)))
 t_init = time()
 np.__config__.show()
 """Hubbard model Parameters"""
-L = 10# system size
+L = 8# system size
 N_up = L // 2 + L % 2  # number of fermions with spin up
 N_down = L // 2  # number of fermions with spin down
 N = N_up + N_down  # number of particles
 t0 = 0.52  # hopping strength
 # U = 0*t0  # interaction strength
-U = 5* t0  # interaction strength
+U = 0.3* t0  # interaction strength
 pbc = True
 
 """Laser pulse parameters"""
@@ -88,7 +88,7 @@ outfile = './Data/expectations:{}sites-{}up-{}down-{}t0-{}U-{}cycles-{}steps-{}p
 # build spinful fermions basis. It's possible to specify certain symmetry sectors here, but I'm not going to touch that
 # until I understand it better.
 basis = spinful_fermion_basis_1d(L, Nf=(N_up, N_down))
-basis = spinful_fermion_basis_1d(L, Nf=(N_up, N_down),a=1,sblock=1,kblock=1)
+# basis = spinful_fermion_basis_1d(L, Nf=(N_up, N_down),a=1,sblock=1,kblock=1)
 # basis = spinful_fermion_basis_1d(L, Nf=(N_up, N_down),sblock=1)
 
 print('Hilbert space size: {0:d}.\n'.format(basis.Ns))

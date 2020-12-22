@@ -49,16 +49,20 @@ def plot_spectra(U, w, spec, min_spec, max_harm):
     plt.show()
 
 
+
 params = {
-    'axes.labelsize': 40,
+    'axes.labelsize': 46,
     # 'legend.fontsize': 28,
-    'legend.fontsize': 28,
-    'xtick.labelsize': 28,
-    'ytick.labelsize': 28,
-    'figure.figsize': [20, 12],
+    'legend.fontsize': 25,
+    'xtick.labelsize': 35,
+    'ytick.labelsize': 40,
+    # 'figure.figsize': [2 * 3.375, 2 * 3.375],
     'text.usetex': True,
+    # 'figure.figsize': (12, 16),
+    'figure.figsize': (20, 12),
     'lines.linewidth' : 3,
     'lines.markersize' : 15
+
 }
 plt.rcParams.update(params)
 # print(plt.rcParams.keys())
@@ -197,7 +201,7 @@ print(D_densities2.shape)
 # plt.subplot(211)
 # sitelabels=['$n_{ \\uparrow %s}(t)$' % (j) for j in range(L)]
 # print(sitelabels)
-# plt.title('up vs down densities')
+# plt.title('up vs down densities')$\\kappa=10^{%d}g,\\gamma=10^{%d}g$' % (kappa_factor, gamma_factor)
 # plt.ylabel('$n_{ \\uparrow j} (t), \\frac{U_b}{t_0}= %.1f, \\frac{SO}{t_0}= %.1f $' % (U_b/t0,SO/t0))
 # for i in range(L):
 #     plt.plot(times,up_densities[:,i],label=sitelabels[i])
@@ -468,7 +472,7 @@ for rank in [32,64,256]:
     plt.xlabel('Time')
     plt.ylabel('$a(t)$')
     # plt.ylabel('$\\frac{\\partial J(t)}{\\partial t}$')
-    plt.grid(True)
+    # plt.grid(True)
     plt.plot(times,exact,label='rank={}'.format(rank))
     # plt.plot(times, J_field,label='rank={}'.format(rank))
 # exact_J=def_J
@@ -477,7 +481,7 @@ plt.legend(loc='lower right')
 
 plt.subplot(212)
 plt.loglog(evotimes,deviation,'-o')
-plt.grid(True)
+# plt.grid(True)
 # plt.plot(evotimes,deviation)
 plt.ylabel('$\\mathcal{E}$')
 plt.xlabel('Runtime (s)')

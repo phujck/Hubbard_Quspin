@@ -81,8 +81,8 @@ else:
 """instantiate parameters with proper unit scaling"""
 for gamma in [1,1e-1,1e-2,1e-3]:
     gamma=gamma*t0
-    for rank in [16,32,64,128]:
-        for mu in [0.2,0.4,0.6,0.8,1]:
+    for rank in [16,128]:
+        for mu in [0.4,0.6,0.8,1]:
             lat = hhg(nup=N_up, ndown=N_down, nx=L, ny=0, U=U, t=t0, pbc=pbc, gamma=gamma,mu=mu)
             outfile = './Data/Approx/expectations:{}sites-{}up-{}down-{}t0-{}U-{}t_max-{}steps-{}gamma-{}mu-{}rank-{}pbc.npz'.format(L,
                                                                                                                               N_up,

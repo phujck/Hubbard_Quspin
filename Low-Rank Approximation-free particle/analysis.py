@@ -51,16 +51,21 @@ def plot_spectra(U, w, spec, min_spec, max_harm):
 
 
 params = {
-    'axes.labelsize': 40,
+    'axes.labelsize': 46,
     # 'legend.fontsize': 28,
-    'legend.fontsize': 28,
-    'xtick.labelsize': 28,
-    'ytick.labelsize': 28,
-    'figure.figsize': [20, 12],
+    'legend.fontsize': 25,
+    'xtick.labelsize': 35,
+    'ytick.labelsize': 40,
+    # 'figure.figsize': [2 * 3.375, 2 * 3.375],
     'text.usetex': True,
+    # 'figure.figsize': (12, 16),
+    'figure.figsize': (20, 12),
     'lines.linewidth' : 3,
     'lines.markersize' : 15
+
 }
+
+
 plt.rcParams.update(params)
 # print(plt.rcParams.keys())
 
@@ -302,14 +307,14 @@ for gamma_exp in [1,2]:
     J_field=2*expectations['current']
     final_J.append(J_field[-1].real)
     plt.subplot(211)
-    plt.grid(True)
+    # plt.grid(True)
     if rank==2 or rank==256:
         plt.plot(times, J_field, label='$\\Gamma={}'.format(rank))
     else:
         plt.plot(times, J_field)
     plt.legend(loc='upper left')
     plt.subplot(212)
-    plt.grid(True)
+    # plt.grid(True)
     exact = np.gradient(J_field, delta)
     w, spec = spectrum_welch(exact.real, delta)
     w *= 2. * np.pi
@@ -356,11 +361,13 @@ for mu in [0.4,0.6,0.8,1]:
     # gammas=np.sqrt(gammas)
     plt.loglog(gammas,np.abs(final_J),marker='o',label='$\\mu=$%.1f' % (mu))
     # plt.loglog([gammas[0],gammas[-1]],[np.abs(final_J)[0],np.abs(final_J)[-1]],marker='x')
-plt.legend()
+plt.legend(loc='lower right')
 
 # plt.xlabel('$\\Gamma/t_0$')
 plt.ylabel('$J_f$')
-plt.text(0.1, 1e-4, 'Rank=128',fontsize=35)
+# plt.text(0.1, 1e-4, 'Rank=128',fontsize=35)
+# plt.text(0.1, 1e-4, 'Rank=128',fontsize=35)
+plt.annotate('$(a)$', xy=(0.01, 0.9), xycoords='axes fraction', fontsize=46)
 
 rank=16
 plt.subplot(212)
@@ -393,7 +400,11 @@ plt.xlabel('$\\Gamma/t_0$')
 plt.ylabel('$J_f$')
 
 # plt.show()
-plt.text(0.1, 1e-4, 'Rank=16',fontsize=35)
+# plt.text(0.1, 1e-4, 'Rank=16',fontsize=35)
+plt.annotate('$(b)$', xy=(0.01, 0.9), xycoords='axes fraction', fontsize=46)
+plt.tight_layout()
+plt.savefig('./Plots/steadystatedistrib.pdf',
+            bbox_inches='tight')
 plt.show()
 
 rank=128
@@ -426,7 +437,7 @@ plt.legend()
 # plt.xlabel('$\\Gamma/t_0$')
 plt.ylabel('$J_f$')
 
-rank=64
+rank=16
 plt.subplot(212)
 for gamma_exp in [0, 1, 2, 3]:
     gammas = []
@@ -475,9 +486,9 @@ for mu in [1,0.8,0.6,0.4]:
     expectations = np.load(outfile)
     J_field=2*expectations['current']
     plt.subplot(211)
-    plt.xlabel('Time',fontsize=32)
+    plt.xlabel('Time',fontsize=28)
     plt.ylabel('$a(t)$')
-    plt.grid(True)
+    # plt.grid(True)
     # if rank==2 or rank==256:
     #     plt.plot(times, J_field, label='$\\Gamma={}'.format(rank))
     # else:
@@ -486,7 +497,7 @@ for mu in [1,0.8,0.6,0.4]:
     # plt.plot(times, J_field, label='$\\mu=${}'.format(mu))
     plt.plot(times, exact, label='$\\mu=${}'.format(mu))
     plt.subplot(212)
-    plt.grid(True)
+    # plt.grid(True)
     exact = np.gradient(J_field, delta)
     w, spec = spectrum_welch(exact.real, delta)
     w *= 2. * np.pi
@@ -503,6 +514,6 @@ for xc in xlines:
 plt.xlabel('$\\omega/\\omega_{0}$')
 plt.ylabel('$S(\\omega)$')
 # plt.legend(loc='upper right')
-plt.savefig('./Plots/currentsvsgamma' + figparams,
+plt.savefig('./Plots/01gammaspectrum.pdf',
             bbox_inches='tight')
 plt.show()

@@ -8,7 +8,7 @@ N = N_up + N_down  # number of particles
 t0 = 0.52  # hopping strength
 # U = 0*t0  # interaction strength
 U = 1 * t0  # interaction strength
-gamma = 1*t0
+gamma = 0.1*t0
 mu = 1
 pbc = False
 rank=16
@@ -22,7 +22,7 @@ n_steps=600
 times, delta = np.linspace(0.0, t_max, n_steps,endpoint=True, retstep=True)
 
 
-L2 = 12  # system size
+L2 = 14  # system size
 N_up2 = L2 // 2 + L % 2  # number of fermions with spin up
 N_down2 = L2 // 2  # number of fermions with spin down
 # N_down = 0
@@ -33,7 +33,7 @@ U2 = 1* t0  # interaction strength
 gamma2 = 0.5*t0
 mu2 = 1
 pbc2 = False
-rank2=64
+rank2=16
 
 t_max2 = t_max
 n_steps2 = n_steps

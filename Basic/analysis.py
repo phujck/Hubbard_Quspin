@@ -51,13 +51,13 @@ plt.rcParams.update(params)
 
 
 """Hubbard model Parameters"""
-L = 10 # system size
+L = 8 # system size
 N_up = L // 2 + L % 2  # number of fermions with spin up
 N_down = L // 2  # number of fermions with spin down
 N = N_up + N_down  # number of particles
 t0 = 0.52  # hopping strength
 # U = 0*t0  # interaction strength
-U = 1 * t0  # interaction strength
+U = 0.3 * t0  # interaction strength
 pbc = True
 
 """Laser pulse parameters"""
@@ -81,7 +81,7 @@ outfile = './Data/expectations:{}sites-{}up-{}down-{}t0-{}U-{}cycles-{}steps-{}p
                                                                                                cycles,
                                                                                                n_steps, pbc)
 # U2=1.0001*t0
-U2=0
+U2=0.301*t0
 outfile2 = './Data/expectations:{}sites-{}up-{}down-{}t0-{}U-{}cycles-{}steps-{}pbc.npz'.format(L, N_up, N_down, t0, U2,
                                                                                                cycles,
                                                                                                n_steps, pbc)
